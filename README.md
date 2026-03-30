@@ -356,16 +356,16 @@ hello from container
 ```
 
 ### 8-3. attach vs exec 차이 정리
+https://docs.docker.com/reference/cli/docker/container/attach/
+https://docs.docker.com/reference/cli/docker/container/exec/
 
-<!-- 직접 관찰 후 작성 -->
-
+attach는 컨테이너의 메인 프로세스(PID 1)에 직접 연결하므로, 종료 시 컨테이너도 함께 종료된다. exec는 새로운 프로세스를 별도로 실행하므로, 종료해도 컨테이너가 유지된다. 따라서 실행 중인 컨테이너를 디버깅하거나 내부를 확인할 때는 exec가 안전하다.
 ---
 
 ## 9. Dockerfile 기반 커스텀 이미지
 
 ### 9-1. 선택한 베이스 이미지
-
-<!-- 예: nginx:alpine -->
+nginx:alpine
 
 ### 9-2. 커스텀 포인트 및 목적
 
@@ -374,7 +374,20 @@ hello from container
 ### 9-3. Dockerfile
 
 ```dockerfile
-<!-- 작성 후 붙여넣기 -->
+FROM nginx:alpine
+ 
+# 이미지 메타데이터 설정
+LABEL org.opencontainers.image.title="my-custom-nginx"
+LABEL org.opencontainers.image.description="AI/SW 개발 워크스테이션 구축 미션 - 커스텀 nginx 이미지"
+ 
+# 환경 변수 설정
+ENV APP_ENV=dev
+ 
+# 정적 콘텐츠 복사
+COPY static/ /usr/share/nginx/html/
+ 
+# 80번 포트 노출
+EXPOSE 80
 ```
 
 ### 9-4. 빌드 및 실행
@@ -395,27 +408,71 @@ $ docker run -d -p 8080:80 --name my-web my-web:1.0
 
 ```bash
 $ curl http://localhost:8080
-
 ```
-
-<!-- 브라우저 스크린샷 첨부 (주소창 + 응답 화면) -->
+```html
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI/SW 개발 워크스테이션</title>
+</head>
+<body>
+    <h1>Hello World</h1>
+    <p>AI/SW 개발 워크스테이션 구축 미션 - nginx 컨테이너 실행 중</p>
+</body>
+```
 
 ---
 
 ## 11. 바인드 마운트 반영
 
+
+### 실행
 ```bash
-# 실행
-$ docker run -d -v $(pwd)/site:/usr/share/nginx/html -p 8081:80 --name bind-test my-web:1.0
-
-# 호스트 파일 수정 전 확인
-$ curl http://localhost:8081
-
-# 호스트 파일 수정 후 확인
-$ curl http://localhost:8081
-
+$ docker run -d -v $(pwd)/static:/usr/share/nginx/html -p 8081:80 --name bind-test my-web:1.0
 ```
+### 호스트 파일 수정 전 확인
+```bash
+$ curl http://localhost:8081
+```
+```html
+<!DOCTYPE html>
+<html lang="ko">
 
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI/SW 개발 워크스테이션</title>
+</head>
+
+<body>
+    <h1>Hello World</h1>
+    <p>AI/SW 개발 워크스테이션 구축 미션 - nginx 컨테이너 실행 중</p>
+</body>
+
+</html>
+```
+### 호스트 파일 수정 후 확인
+```bash
+$ curl http://localhost:8081
+```
+```html
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI/SW 개발 워크스테이션</title>
+</head>
+
+<body>
+    <h1>Hello World</h1>
+</body>
+
+</html>
+```
 ---
 
 ## 12. Docker 볼륨 영속성 검증
@@ -445,12 +502,13 @@ $ docker exec -it vol-test2 bash -c "cat /data/test.txt"
 # 사용자 정보 설정
 $ git config --global user.name "이름"
 $ git config --global user.email "이메일"
-
+$ git config --global init.defaultBranch main
 
 # 설정 확인
 $ git config --list
 
 ```
+![GitHub VSCode 연동](images/github-vscode.png)
 
 <!-- VSCode GitHub 연동 스크린샷 첨부 -->
 
@@ -462,18 +520,18 @@ $ git config --list
 
 | 항목 | 내용 |
 |------|------|
-| 문제 | |
-| 원인 가설 | |
-| 확인 | |
-| 해결/대안 | |
+| 문제 | docker run -d ubuntu sleep infinity 이후 프로세스 꺼지지 않음 |
+| 원인 가설 | macOS 터미널이 해당 단축키를 가로채는 것으로 추정 |
+| 확인 | ctrl+c, ctrl+p, ctrl+q 등의 단축키 입력 후에도 프로세스 존재 |
+| 해결/대안 | docker rm -f <container name>을 통해서 종료 및 삭제|
 
 ### Case 2.
 
 | 항목 | 내용 |
 |------|------|
-| 문제 | |
-| 원인 가설 | |
-| 해결/대안 | |
+| 문제 | git push 불가 |
+| 원인 가설 | GitHub이 2021년에 비밀번호 인증 폐지 |
+| 해결/대안 | SSH 방식 사용 |
 
 ---
 
@@ -483,24 +541,8 @@ $ git config --list
 codyssey-e1-1/
 ├── README.md
 ├── Dockerfile
-└── site/
+└── static/
     └── index.html
 ```
 
 <!-- 구성 기준 설명: 왜 이렇게 나눴는지 -->
-
----
-
-## 16. 검증 방법 요약
-
-| 항목 | 검증 명령 | 결과 위치 |
-|------|----------|----------|
-| 터미널 조작 | `pwd`, `ls -la`, `mkdir` 등 | 4섹션 |
-| 권한 변경 | `chmod`, `ls -l` | 5섹션 |
-| Docker 점검 | `docker --version`, `docker info` | 6섹션 |
-| hello-world | `docker run hello-world` | 8섹션 |
-| 이미지 빌드 | `docker build` | 9섹션 |
-| 포트 매핑 | `curl http://localhost:8080` | 10섹션 |
-| 바인드 마운트 | 파일 수정 전/후 비교 | 11섹션 |
-| 볼륨 영속성 | 컨테이너 삭제 전/후 비교 | 12섹션 |
-| Git/GitHub | `git config --list` | 13섹션 |
